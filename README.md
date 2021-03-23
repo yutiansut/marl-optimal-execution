@@ -33,12 +33,12 @@ git clone git@github.com:xxx.git && cd xxx
 - Install a conda environment:
 
 ```bash
-conda create -n fintech-capstone python=3.7.6
-conda activate fintech-capstone
+conda create -n marl-oe python=3.7.6
+conda activate marl-oe
 pip install -r requirements.txt
 ```
 
-- Link your VSCode `python.pythonPath` (in `.vscode/settings.json`) to your conda `fintech-capstone` environment.
+- Link your VSCode `python.pythonPath` (in `.vscode/settings.json`) to your conda `marl-oe` environment.
 
 ## Launch
 
@@ -69,10 +69,10 @@ chmod +x scripts/graphs.sh
 
 ### Realism metrics
 
-*N.B.:* You may need to export the Python path of the fintech-capstone repository:
+*N.B.:* You may need to export the Python path of the marl-oe repository:
 
 ```bash
-export PYTHONPATH="${PYTHONPATH}:/path_to_folder/fintech-capstone"
+export PYTHONPATH="${PYTHONPATH}:/path_to_folder/marl-oe"
 ```
 
 #### Asset return stylized facts
