@@ -27,7 +27,7 @@ This repository is used to share some code about FinTech Capstone.
 - Clone the repository:
 
 ```bash
-git clone git@github.com:MichaelKarpe/fintech-capstone.git && cd fintech-capstone
+git clone git@github.com:xxx.git && cd xxx
 ```
 
 - Install a conda environment:
