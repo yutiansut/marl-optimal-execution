@@ -151,3 +151,45 @@ git clone https://github.com/abides-sim/abides.git
 cd abides
 pip install -r requirements.txt
 ```
+
+## Run impact visualizations
+
+- in `event_midpoint.py` and `event_ticker.py` files, replace `sim_files = sys.argv[2]` with `sim_files = sys.argv[2].split('\n')`
+- Run 10 impact studies
+- Run following commands:
+
+```bash
+python cli/event_midpoint.py GOOG "$(ls -at log/impact_*/Exchange*)"
+python cli/event_ticker.py GOOG "$(ls -at log/impact_*/Exchange*)"
+python cli/midpoint_plot.py GOOG log/impact_10/ExchangeAgent0.bz2
+python cli/quote_plot.py GOOG log/impact_10/ExchangeAgent0.bz2
+python cli/ticker_plot.py GOOG log/impact_10/ExchangeAgent0.bz2
+```
+
+## Run Marketreplay Q-Learning
+
+- `scripts/execution/marketreplay/marketreplay.sh` (however you don't need to run it as I uploaded the generated logs on GitHub, this commands uses more than 16GB of RAM when run)
+- `scripts/execution/marketreplay/marketreplay_rl_train.sh` (generates a lot of files in log/execution/marketreplay, don't know how to deal with the number of files generated for now and how to stop without interrupted execution brutally)
+- `scripts/execution/qlearning.sh` computed the Q-Table and saves it in `log/execution/marketreplay` (you may need to reduce `num_episodes` if you didn't let the previous command execute enough episodes)
+
+## Run DDQN Training
+
+```bash
+chmod +x scripts/execution/marketreplay/marketreplay_ddqn_train.sh
+scripts/execution/marketreplay/marketreplay_ddqn_train.sh
+```
+
+## Run other scripts in ABIDES
+
+```bash
+scripts/rmsc02.sh
+scripts/sparse_zi_100.sh
+python -u abides.py -c sum -l sum -s 123456789
+python -u abides.py -c value_noise -l value_noise -s 123456789
+python -u abides.py -c qlearning -l qlearning -s 123456789
+```
+
+## Export Python Path
+```bash
+export PYTHONPATH="${PYTHONPATH}:/path_to_folder/marl-optimal-execution"
+```

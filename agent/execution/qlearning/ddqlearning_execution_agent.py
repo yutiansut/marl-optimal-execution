@@ -153,6 +153,12 @@ class DDQLearningExecutionAgent(TradingAgent):
         self.state = "AWAITING_SPREAD"
 
     def receiveMessage(self, current_time, msg):
+        """[summary]
+
+        Args:
+            current_time ([type]): [description]
+            msg ([type]): [description]
+        """
         super().receiveMessage(current_time, msg)
         if msg.body["msg"] == "ORDER_ACCEPTED":
             # print("*order accepted*")
@@ -270,7 +276,22 @@ class DDQLearningExecutionAgent(TradingAgent):
         #     self.plot_cost()
 
     def get_observation(self, current_time, bids, asks):
+        """[summary]
+
+        Args:
+            current_time ([type]): [description]
+            bids ([type]): [description]
+            asks ([type]): [description]
+        """
         def get_remaining_time(current_time):
+            """[summary]
+
+            Args:
+                current_time ([type]): [description]
+
+            Returns:
+                [type]: [description]
+            """
             current_time = current_time.floor(self.freq)
             for i, t in enumerate(list(self.execution_time_horizon)):
                 if t == current_time:
