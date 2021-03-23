@@ -1,0 +1,18 @@
+Instructions for Experiments
+
+Training: 10 days from "2003-01-13" to "2003-01-24"
+1. change action space: SIZE_ALLOCATION, SIZE_SCALE in ddqlearning_execution_agent.py
+2. change n_actions parameter in line 48 of ddqlearning_execution_agent.py and line 164 of execution_marketreplay_ddqn.py according to the calculation on the paper
+3. change reward function in compute_reward() method in ddqlearning_execution_agent.py. Specifically, making line 391 to line 396 effective will include the trading rate in reward function
+4. change FORMULATION_CODE parameter in line 25 of execution_marketreplay_ddqn.py. values can be, for example, "1bI", "1aII", "2bII".
+5. make sure epsilon greedy in choose_action() method of ddqlearning_execution_agent.py is effective
+5. run scripts/execution/marketreplay/marketreplay_ddqn_train.sh
+6. check models and logs have been saved properly
+
+
+Testing: 3 days from "2003-01-27" to "2003-01-29"
+1. make sure FORMULATION_CODE parameter in line 25 of execution_marketreplay_ddqn.py is the mode you want to test
+2. run scripts/execution/marketreplay/marketreplay_ddqn_test.sh
+3. check logs have been saved properly
+
+Repeat above steps to test another set of parameter!
