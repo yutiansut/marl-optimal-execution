@@ -41,7 +41,7 @@ pip install -r requirements.txt
 ```bash
 conda env create -f marl-oe.yml
 conda activate marl-oe
-conda env create -f environment.yml
+pip install -r requirements.txt
 ```
 
 - Link your VSCode `python.pythonPath` (in `.vscode/settings.json`) to your conda `marl-oe` environment.
