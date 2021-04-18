@@ -1,6 +1,4 @@
-# FinTech Capstone
-
-This repository is used to share some code about FinTech Capstone.
+# Multi-Agent Reinforcement Learning for Optimal Execution
 
 ## Index
 
@@ -36,6 +34,14 @@ git clone git@github.com:xxx.git && cd xxx
 conda create -n marl-oe python=3.7.6
 conda activate marl-oe
 pip install -r requirements.txt
+```
+
+- Set up conda environment with .yml file
+
+```bash
+conda env create -f marl-oe.yml
+conda activate marl-oe
+conda env create -f environment.yml
 ```
 
 - Link your VSCode `python.pythonPath` (in `.vscode/settings.json`) to your conda `marl-oe` environment.
@@ -187,9 +193,4 @@ scripts/sparse_zi_100.sh
 python -u abides.py -c sum -l sum -s 123456789
 python -u abides.py -c value_noise -l value_noise -s 123456789
 python -u abides.py -c qlearning -l qlearning -s 123456789
-```
-
-## Export Python Path
-```bash
-export PYTHONPATH="${PYTHONPATH}:/path_to_folder/marl-optimal-execution"
 ```
