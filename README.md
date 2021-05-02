@@ -198,4 +198,4 @@ python -u abides.py -c qlearning -l qlearning -s 123456789
 # Wiki Page 
 The MARL wiki is a place to include HOWTO documents
 
-- [1. **MARL Environment Setup**](https://github.com/Jin-Fang/marl-optimal-execution/wiki_doc/env.md)
+- [**MARL Environment Setup**](https://github.com/Jin-Fang/marl-optimal-execution/blob/master/wiki_doc/env.md)
