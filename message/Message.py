@@ -5,7 +5,7 @@ from enum import Enum, unique
 class MessageType(Enum):
     MESSAGE = 1
     WAKEUP = 2
-
+    CANCEL_ORDER = 3 # indicator for cancelling existing order
     def __lt__(self, other):
         return self.value < other.value
 
