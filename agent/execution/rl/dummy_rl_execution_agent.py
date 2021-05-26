@@ -156,11 +156,11 @@ class DummyRLExecutionAgent(ExecutionAgent):
 		self.state = "AWAITING_SPREAD"
 
 
-	def setCancelOrder(self, currentTime):
+	def setCancelOrder(self, requestedTime):
 		"""
 		send EndOrder signal to kernel by calling kernel's setEndOrder() method 
 		"""
-		self.kernel.setEndOrder(self.id, requestedTime)
+		self.kernel.setEndOrder(self.id, requestedTime - pd.Timedelta(0.5))
 
 
 	def receive_message(self, currentTime, msg):
