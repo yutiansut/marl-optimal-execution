@@ -18,3 +18,5 @@ LOBSTER_SampleFiles_ReadMe.txt
 *_5.csv
 *_10.csv
 *.pkl
+.vscode/
+*.pyc
