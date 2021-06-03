@@ -1,5 +1,6 @@
 import datetime
 
+import jsons as js
 import pandas as pd
 
 from agent.TradingAgent import TradingAgent
@@ -184,6 +185,18 @@ class DummyRLExecutionAgent(ExecutionAgent):
 		# 		and is ready for place order
 
 
+	def cancelAllOrders(self, currentTime=None):
+		"""used by the trading agent to cancel all of its orders."""
+		if not currentTime:
+			currentTime = self.currentTime
+		for _, order in self.orders.items():
+			log_print(f"[---- {self.name} t={self.t} - {currentTime} ----]: CANCELLED QUANTITY : {order.quantity}")
+			if self.log_orders:
+				self.logEvent("CANCEL_SUBMITTED", js.dump(order, strip_privates=True))
+			self.cancelOrder(order)
+			self.accepted_orders = []
+
+
 	def handleOrderAcceptance(self, currentTime, msg):
 		"""
 		
@@ -200,20 +213,27 @@ class DummyRLExecutionAgent(ExecutionAgent):
 		# add more updates to agent's attributes per need
 
 
-	def get_observation():
+	def get_observation(self, currentTime):
 		"""
 		compute and return state related features
 		"""
 		# TODO
-		pass
+		if not currentTime:
+			currentTime = self.currentTime
+		print(f'dummyRL Agent observation get at {currentTime}')
+		return None
 
 
 
 
-	def compute_reward():
+	def get_reward(self, currentTime):
 		"""
 		compute reward for the action in current step
 		"""
 		# TODO
-		pass
+		if not currentTime:
+			currentTime = self.currentTime
+		print(f'dummyRL Agent reward get at {currentTime}')
+		return None
+		
 

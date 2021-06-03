@@ -1,4 +1,4 @@
-from ABIDESEnv.agent_config import agents
+from ABIDESEnv.agent_config import Agents
 from GymKernel import GymKernel
 import gym
 import pandas as pd
@@ -21,15 +21,13 @@ class ABIDESEnv(gym.Env):
         '''
         action is from an external agent
         '''
-        self.kernel.stepRunner()
+        reward, obs = self.kernel.stepRunner()
 
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
-        # incomplete
-        RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DummyRLExecutionAgent_name')]
-        obs = RL_agent.get_observation()
-        reward = RL_agent.compute_reward()
+        # # move following operation into kernel's stepRunner method, then return observation and reward
+        # RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DummyRLExecutionAgent_name')]
+        # obs = RL_agent.get_observation()
+        # reward = RL_agent.compute_reward()
+
         if not self.kernel.messages.empty() and \
             self.kernel.currentTime and (self.kernel.currentTime <= self.kernel.stopTime):
             done = 0
@@ -47,7 +45,7 @@ class ABIDESEnv(gym.Env):
         self.initKernel()
         
     def initAgents(self, numMomentumAgent=5, numNoiseAgent=5):
-        self.agents = agents(self.ticker, self.date, seed=self.seed) # initialize the agents object for adding agents
+        self.agents = Agents(self.ticker, self.date, seed=self.seed) # initialize the agents object for adding agents
         
         self.agents.addExchangeAgent()
 
@@ -71,7 +69,8 @@ class ABIDESEnv(gym.Env):
         latency = np.zeros((self.agents.num_agents, self.agents.num_agents))
         noise = [1.0]
 
-        self.kernel.initRunner(agents=self.agents.agent_list,
+        # pass entire Agents object in order to enable kernel of more advanced operations
+        self.kernel.initRunner(agents=self.agents,
                                startTime=kernelStartTime,
                                stopTime=kernelStopTime,
                                agentLatency=latency,

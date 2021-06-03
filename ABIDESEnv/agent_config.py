@@ -8,7 +8,7 @@ from agent.execution.baselines.twap_agent import TWAPExecutionAgent
 from agent.NoiseAgent import NoiseAgent
 from util import util
 
-class agents():
+class Agents():
     def __init__(self, symbol, date, seed=None):
         '''
         symbol [str]: name of the stock
