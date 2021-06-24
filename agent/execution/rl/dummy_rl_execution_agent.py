@@ -75,7 +75,8 @@ from util.util import log_print
 
 class DummyRLExecutionAgent(ExecutionAgent):
 
-	def __init__(self,
+	def __init__(
+		self,
 		id,
 		name,
 		type,
@@ -93,19 +94,18 @@ class DummyRLExecutionAgent(ExecutionAgent):
 		add more memory placeholders for get_observation() method
 		"""
 		super().__init__(
-			self,
-			id,
-			name,
-			type,
-			symbol,
-			starting_cash,
-			direction,
-			quantity,
-			execution_time_horizon,
-			trade=True,
-			log_events=False,
-			log_orders=False,
-			random_state=None)
+			id = id,
+			name = name,
+			type = type,
+			symbol = symbol,
+			starting_cash = starting_cash,
+			direction = direction,
+			quantity = quantity,
+			execution_time_horizon = execution_time_horizon,
+			trade = trade,
+			log_events = log_events,
+			log_orders = log_orders,
+			random_state = random_state)
 
 		# new attributes added for dummy rl agent
 		self.freq = freq
@@ -113,11 +113,6 @@ class DummyRLExecutionAgent(ExecutionAgent):
 		# execution_time_horizon attribute is for cancelorder schedule
 		# this makes sure last cancelorder signal still within defined time range
 		self.effective_time_horizon = execution_time_horizon[:-1]
-
-
-
-
-
 
 
 	def wakeup(self, currentTime):

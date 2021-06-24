@@ -16,6 +16,7 @@ class GymKernel(Kernel):
 
 
     def initRunner(self,
+                   RL_agent,
                    agents=[],
                    startTime=None,
                    stopTime=None,
@@ -27,11 +28,13 @@ class GymKernel(Kernel):
                    agentLatencyModel=None,
                    seed=None,
                    oracle=None,
-                   log_dir=None):
+                   log_dir=None,
+                   ):
         # agents passed in is Agents object, this change enables find agent by index method
         # corresponding code related to self.agents have been changed
         self.agents = agents
-        self.agent_saved_states = [None] * len(self.agents.agent_list)
+        self.RL_agent = RL_agent
+        self.agent_saved_states = [None] * len(self.agents)
 
         # placeholder for current step reward and observation
         # TODO: need to confirm observation data type
@@ -61,15 +64,15 @@ class GymKernel(Kernel):
 
         # This also nicely enforces agents being unable to act before
         # the simulation startTime.
-        self.agentCurrentTimes = [self.startTime] * len(agents.agent_list)
+        self.agentCurrentTimes = [self.startTime] * len(agents)
 
         # agentComputationDelays is in nanoseconds, starts with a default
         # value from config, and can be changed by any agent at any time
         # (for itself only).  It represents the time penalty applied to
         # an agent each time it is awakened  (wakeup or recvMsg).  The
         # penalty applies _after_ the agent acts, before it may act again.
-        # TODO: this might someday change to pd.Timedelta objects.
-        self.agentComputationDelays = [defaultComputationDelay] * len(agents.agent_list)
+        # this might someday change to pd.Timedelta objects.
+        self.agentComputationDelays = [defaultComputationDelay] * len(agents)
 
         # If an agentLatencyModel is defined, it will be used instead of
         # the older, non-model-based attributes.
@@ -82,7 +85,7 @@ class GymKernel(Kernel):
         # If agentLatency is not defined, define it using the defaultLatency.
         # This matrix defines the communication delay between every pair of
         # agents.
-        self.agentLatency = agentLatency if agentLatency is not None else [[defaultLatency]*len(agents.agent_list)]*len(agents.agent_list)
+        self.agentLatency = agentLatency if agentLatency is not None else [[defaultLatency]*len(agents)]*len(agents)
 
         # There is a noise model for latency, intended to be a one-sided
         # distribution with the peak at zero.  By default there is no noise
@@ -115,7 +118,9 @@ class GymKernel(Kernel):
         # communicate with the kernel in the future (as it does not have
         # an agentID).
         log_print("\n--- Agent.kernelInitializing() ---")
-        for agent in self.agents.agent_list:
+        print(self.agents)
+        for agent in self.agents:
+            print(agent)
             agent.kernelInitializing(self)
 
         # Event notification for kernel start (agents may set up
@@ -132,7 +137,8 @@ class GymKernel(Kernel):
         # the Kernel.  Direct references to utility objects that are not
         # agents are acceptable (e.g. oracles).
         log_print("\n--- Agent.kernelStarting() ---")
-        for agent in self.agents.agent_list:
+        for agent in self.agents:
+            print(agent)
             agent.kernelStarting(self.startTime)
 
         # Set the kernel to its startTime.
@@ -153,11 +159,9 @@ class GymKernel(Kernel):
         # be again, because agents only "wake" in response to messages), or until
         # the kernel stop time is reached.
 
-        # TODO: need to add stopCondition!!!
-
         # get dummyRL agent, currently only consider one dummyRL in one runner
         # later on, we can loop over the agents and finish operations to enable multiple dummyRL
-        RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DummyRLExecutionAgent_name')]
+        # RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DummyRLExecutionAgent_name')]
         
         end_step = False
         while not end_step and not self.messages.empty() and self.currentTime and (self.currentTime <= self.stopTime):
@@ -207,7 +211,7 @@ class GymKernel(Kernel):
                 self.agentCurrentTimes[agent] = self.currentTime
 
                 # Wake the agent.
-                self.agents.agent_list[agent].wakeup(self.currentTime)
+                self.agents[agent].wakeup(self.currentTime)
 
                 # Delay the agent by its computation delay plus any transient additional delay requested.
                 self.agentCurrentTimes[agent] += pd.Timedelta(
@@ -224,9 +228,9 @@ class GymKernel(Kernel):
             # currently, only dummyRL agent uses CANCEL_ORDER message
             elif msg_type == MessageType.CANCEL_ORDER:
                 # call agent get_reward method
-                self.current_step_reward = RL_agent.get_reward(self.currentTime)
+                self.current_step_reward = self.RL_agent.get_reward(self.currentTime)
                 # call agent cancel_order method
-                RL_agent.cancelAllOrders(self.currentTime)
+                self.RL_agent.cancelAllOrders(self.currentTime)
 
 
             elif msg_type == MessageType.MESSAGE:
@@ -250,7 +254,7 @@ class GymKernel(Kernel):
                 self.agentCurrentTimes[agent] = self.currentTime
 
                 # Deliver the message.
-                self.agents.agent_list[agent].receiveMessage(self.currentTime, msg)
+                self.agents[agent].receiveMessage(self.currentTime, msg)
 
                 # Delay the agent by its computation delay plus any transient additional delay requested.
                 self.agentCurrentTimes[agent] += pd.Timedelta(
@@ -266,8 +270,8 @@ class GymKernel(Kernel):
 
                 # TODO: intercept dummy RL's QUERY SPREAD message, call get_observation, and change end_step
                 # match msg_recipient id with dummy rl agent, and match msg title
-                if agent == RL_agent.id and msg.body["msg"] == "QUERY_SPREAD":
-                    self.current_step_observation = RL_agent.get_observation(self.currentTime)
+                if agent == self.RL_agent.id and msg.body["msg"] == "QUERY_SPREAD":
+                    self.current_step_observation = self.RL_agent.get_observation(self.currentTime)
                     end_step = True
 
             else:
@@ -302,7 +306,7 @@ class GymKernel(Kernel):
         # Agents should not destroy resources they may need to respond
         # to final communications from other agents.
         log_print("\n--- Agent.kernelStopping() ---")
-        for agent in self.agents.agent_list:
+        for agent in self.agents:
             agent.kernelStopping()
 
         # Event notification for kernel termination (agents should not
@@ -310,7 +314,7 @@ class GymKernel(Kernel):
         # is unknown).  Agents should clean up all used resources as the
         # simulation program may not actually terminate if num_simulations > 1.
         log_print("\n--- Agent.kernelTerminating() ---")
-        for agent in self.agents.agent_list:
+        for agent in self.agents:
             agent.kernelTerminating()
 
         print(

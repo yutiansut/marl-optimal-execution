@@ -1,3 +1,4 @@
+from agent.execution.rl.dummy_rl_execution_agent import DummyRLExecutionAgent
 import numpy as np
 import pandas as pd
 from agent.Agent import Agent
@@ -128,8 +129,27 @@ class Agents():
         self.agent_list += [agent]
         self.num_agents += 1
 
-    def addDummyRLExecutionAgent(self):
-        pass
+    def addDummyRLExecutionAgent(self, direction = "BUY", quantity=1e5, freq="30S", starting_cash=0, 
+                                 start_time="09:30:00", end_time="16:00:00", log_events=False, log_orders=False):
+        start_t = self.date_pd + pd.to_timedelta(start_time)
+        end_t = self.date_pd + pd.to_timedelta(end_time)
+        execution_time_horizon = pd.date_range(start=start_t, end=end_t, freq=freq)
+        agent = DummyRLExecutionAgent(id = self.num_agents, 
+                                      name = f"{self.num_agents}_DUMMY_RL_EXECUTION_AGENT",
+                                      type = "DummyRLExecutionAgent",
+                                      symbol = self.symbol,
+                                      starting_cash = starting_cash,
+                                      direction = direction,
+                                      quantity = quantity,
+                                      execution_time_horizon = execution_time_horizon,
+                                      freq = freq,
+                                      trade = True,
+                                      log_events = log_events,
+                                      log_orders = log_orders,
+                                      random_state = np.random.RandomState(seed=self.seed+self.num_agents)
+                                      )
+        self.agent_list.append(agent)
+        self.num_agents += 1
 
     def getAgentTypes(self):
         return [agent.type for agent in self.agent_list]
@@ -137,15 +157,20 @@ class Agents():
     def getAgentNames(self):
         return [agent.name for agent in self.agent_list]
 
-    def getAgentIndexByName(self, name):
+    def getAgentIndexByName(self, lookup_name):
         '''
         name [str]: the index of the agent name
         '''
         names = self.getAgentNames()
-        if name in names:
-            return names.index(name)
-        else:
+        temp = []
+        for name in names:
+            if lookup_name in name:
+                temp.append(name)
+
+        if not temp:
             raise ValueError('input agent name does not exist')
+        else:
+            return [names.index(matched) for matched in temp]
 
 
 

@@ -55,6 +55,7 @@ class MarketReplayAgent(TradingAgent):
             self.setWakeup(self.wakeup_times[0])
             self.wakeup_times.pop(0)
             self.placeOrder(currentTime, self.historical_orders.orders_dict[currentTime])
+
         except IndexError:
             log_print(f"Market Replay Agent submitted all orders - last order @ {currentTime}")
 
@@ -66,6 +67,7 @@ class MarketReplayAgent(TradingAgent):
             self.last_trade[self.symbol] = order.fill_price
 
     def placeOrder(self, currentTime, order):
+        # print(self.historical_orders.orders_dict)
         if len(order) == 1:
             order = order[0]
             order_id = order["ORDER_ID"]
@@ -149,6 +151,7 @@ class L3OrdersProcessor:
             orders_df = orders_df.loc[(orders_df.TIMESTAMP >= self.start_time) & (orders_df.TIMESTAMP < self.end_time)]
             orders_df.set_index("TIMESTAMP", inplace=True)
             log_print(f"Number of Orders: {len(orders_df)}")
+            print(orders_df.head())
             orders_dict = {k: g.to_dict(orient="records") for k, g in orders_df.groupby(level=0)}
             with open(processed_orders_file, "wb") as handle:
                 pickle.dump(orders_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -191,6 +194,7 @@ class LOBSTEROrdersProcessor:
             return read_processed_orders_file(processed_orders_file)
         else:
             print(f"Processed file does not exist for {self.symbol} and {self.date.date()}, processing...")
+            print(self.orders_file_path)
             orders_df = pd.read_csv(
                 self.orders_file_path,
                 names=["TIMESTAMP", "EVENT_TYPE", "ORDER_ID", "SIZE", "PRICE", "BUY_SELL_FLAG"],
@@ -203,9 +207,11 @@ class LOBSTEROrdersProcessor:
                 self.start_time + pd.to_timedelta(orders_df["TIMESTAMP"], "s") - pd.to_timedelta("09:30:00")
             )
             orders_df["SIZE"] = orders_df["SIZE"].astype(int)
-            orders_df["PRICE"] = orders_df["PRICE"].astype(float) / 10000
+            orders_df["PRICE"] = orders_df["PRICE"].astype(float) / 100
+            orders_df["PRICE"] = orders_df["PRICE"].astype(int)
             orders_df = orders_df.loc[(orders_df.TIMESTAMP >= self.start_time) & (orders_df.TIMESTAMP < self.end_time)]
             orders_df.set_index("TIMESTAMP", inplace=True)
+            print(orders_df.head())
             log_print(f"Number of Orders: {len(orders_df)}")
             orders_dict = {k: g.to_dict(orient="records") for k, g in orders_df.groupby(level=0)}
             with open(processed_orders_file, "wb") as handle:

@@ -1,5 +1,5 @@
-from ABIDESEnv.agent_config import Agents
 from GymKernel import GymKernel
+from agent_config import Agents
 import gym
 import pandas as pd
 import numpy as np
@@ -14,13 +14,16 @@ class ABIDESEnv(gym.Env):
         self.ticker = ticker
         self.date = date
         self.log_dir = log_dir
-        self.seed = seed
+        self.seed = np.random.randint(low=0, high=2 ** 32) if seed == None else seed
         self.reset()
 
     def step(self, action):
         '''
         action is from an external agent
         '''
+        # TODO: place order using action input
+
+
         reward, obs = self.kernel.stepRunner()
 
         # # move following operation into kernel's stepRunner method, then return observation and reward
@@ -51,15 +54,18 @@ class ABIDESEnv(gym.Env):
 
         self.agents.addMarketReplayAgent()
 
-        for i in range(numMomentumAgent): 
-            # note that individual agent parameterization may be needed to make this step meaningful
-            self.agents.addMomentumAgent()
+        # self.agents.addTWAPExecutionAgent()
 
-        for i in range(numNoiseAgent):
-            self.agents.addNoiseAgent()
+        self.agents.addDummyRLExecutionAgent()
 
-        self.agents.addTWAPExecutionAgent()
-    
+        # for i in range(numMomentumAgent): 
+        #     # note that individual agent parameterization may be needed to make this step meaningful
+        #     self.agents.addMomentumAgent()
+
+        # for i in range(numNoiseAgent):
+        #     self.agents.addNoiseAgent()
+
+
     def initKernel(self):
         self.kernel = GymKernel("Market Replay Kernel", random_state=np.random.RandomState(seed=self.seed-1))
         kernelStartTime = pd.to_datetime(self.date)
@@ -69,8 +75,14 @@ class ABIDESEnv(gym.Env):
         latency = np.zeros((self.agents.num_agents, self.agents.num_agents))
         noise = [1.0]
 
+        print(self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT'))
+
+        # by default, there should be only one dummy rl agent
+        RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT')[0]]
+        print(RL_agent)
         # pass entire Agents object in order to enable kernel of more advanced operations
-        self.kernel.initRunner(agents=self.agents,
+        self.kernel.initRunner(RL_agent = RL_agent,
+                               agents=self.agents.agent_list,
                                startTime=kernelStartTime,
                                stopTime=kernelStopTime,
                                agentLatency=latency,
@@ -79,3 +91,9 @@ class ABIDESEnv(gym.Env):
                                defaultLatency=0,
                                oracle=None,
                                log_dir=self.log_dir)
+
+if __name__ == "__main__":
+    print("start")
+    env = ABIDESEnv(ticker = "IBM", date = "2003-01-13", seed = 789)
+    env.step(1)
+    
