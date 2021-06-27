@@ -14,7 +14,7 @@ class ABIDESEnv(gym.Env):
         self.ticker = ticker
         self.date = date
         self.log_dir = log_dir
-        self.seed = np.random.randint(low=0, high=2 ** 32) if seed == None else seed
+        self.seed = np.random.randint(low=0, high=2 ** 31 - 1) if seed == None else seed
         self.reset()
 
     def step(self, action):
