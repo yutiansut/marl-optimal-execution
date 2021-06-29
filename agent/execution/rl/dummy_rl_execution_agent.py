@@ -94,13 +94,13 @@ class DummyRLExecutionAgent(ExecutionAgent):
 		add more memory placeholders for get_observation() method
 		"""
 		super().__init__(
-			id = id,
-			name = name,
-			type = type,
-			symbol = symbol,
-			starting_cash = starting_cash,
-			direction = direction,
-			quantity = quantity,
+			id,
+			name,
+			type,
+			symbol,
+			starting_cash,
+			direction,
+			quantity,
 			execution_time_horizon = execution_time_horizon,
 			trade = trade,
 			log_events = log_events,
@@ -125,7 +125,7 @@ class DummyRLExecutionAgent(ExecutionAgent):
 		# Update agent’s currentTime
 		# Handle first wake_up case
 		# Handle market open
-		can_trade = super(TradingAgent, self).wakeup(currentTime)
+		can_trade = TradingAgent.wakeup(self, currentTime)
 		# ----------- above actions handled by trading agent -------------
 		if not can_trade:
 			return
@@ -135,16 +135,16 @@ class DummyRLExecutionAgent(ExecutionAgent):
 				# execution_time_horizon = pd.date_range(start=start_time, end=end_time, freq=freq)
 				# use next wakeup time as current cancel order time, the CancelOrder signal
 				# will be 0.5 ns earlier than next wakeup call
-				self.setCancelOrder([time for time in self.execution_time_horizon if time > current_time][0])
+				self.setCancelOrder([time for time in self.execution_time_horizon if time > currentTime][0])
 			except IndexError:
-				log_print(f"[---- {self.name}  t={self.t} -- {current_time} ----]: RL Agent CancelOrder complete")
+				log_print(f"[---- {self.name}  t={self.t} -- {currentTime} ----]: RL Agent CancelOrder complete")
 				self.trade = False
 		# Schedule next wakeup call if time permits using setWakeup implemented in Agent through kernel’s setWakeup()
 		if self.trade:
 			try:
-				self.setWakeup([time for time in self.effective_time_horizon if time > current_time][0])
+				self.setWakeup([time for time in self.effective_time_horizon if time > currentTime][0])
 			except IndexError:
-				log_print(f"[---- {self.name}  t={self.t} -- {current_time} ----]: RL Agent wakeups complete")
+				log_print(f"[---- {self.name}  t={self.t} -- {currentTime} ----]: RL Agent wakeups complete")
 				self.trade = False
 		
 		# Call agent’s getCurrentSpread()* to receive LOB update
@@ -154,16 +154,16 @@ class DummyRLExecutionAgent(ExecutionAgent):
 
 	def setCancelOrder(self, requestedTime):
 		"""
-		send EndOrder signal to kernel by calling kernel's setEndOrder() method 
+		send EndOrder signal to kernel by calling kernel's setCancelOrder() method 
 		"""
-		self.kernel.setEndOrder(self.id, requestedTime - pd.Timedelta(0.5))
+		self.kernel.setCancelOrder(self.id, requestedTime - pd.Timedelta(0.5))
 
 
 	def receive_message(self, currentTime, msg):
 		"""
 
 		"""
-		super(TradingAgent).receiveMessage(currentTime, msg)
+		TradingAgent.receiveMessage(self, currentTime, msg)
 		# handle order execution
 		if msg.body["msg"] == "ORDER_EXECUTED":
 			self.handleOrderExecution(currentTime, msg)

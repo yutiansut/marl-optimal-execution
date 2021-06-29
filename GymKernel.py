@@ -9,6 +9,8 @@ from message.Message import MessageType
 from util.util import log_print
 from Kernel import Kernel
 
+from IPython.display import clear_output
+
 class GymKernel(Kernel):
 
     # maybe decompose runner function into multiple helper functions for the use in step()
@@ -169,6 +171,12 @@ class GymKernel(Kernel):
             self.currentTime, event = self.messages.get()
             msg_recipient, msg_type, msg = event
 
+            clear_output(wait=True)
+            print("\n", msg_type)
+            print("\n", msg_recipient)
+            if msg_type == MessageType.MESSAGE:
+                print("\n", msg.body["msg"])
+
             # Periodically print the simulation time and total messages, even if muted.
             if self.ttl_messages % 100000 == 0:
                 print(
@@ -282,6 +290,9 @@ class GymKernel(Kernel):
                     "messageType:",
                     self.msg.type,
                 )
+
+            if msg_recipient == 2:
+                break
 
         if self.messages.empty() or (self.currentTime and (self.currentTime > self.stopTime)):
             self.terminateRunner()
