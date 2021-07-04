@@ -262,6 +262,7 @@ class GymKernel(Kernel):
                 self.agentCurrentTimes[agent] = self.currentTime
 
                 # Deliver the message.
+                log_print("***delivering message to {}***", agent)
                 self.agents[agent].receiveMessage(self.currentTime, msg)
 
                 # Delay the agent by its computation delay plus any transient additional delay requested.

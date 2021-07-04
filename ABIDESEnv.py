@@ -95,5 +95,6 @@ class ABIDESEnv(gym.Env):
 if __name__ == "__main__":
     print("start")
     env = ABIDESEnv(ticker = "IBM", date = "2003-01-13", seed = 789)
-    env.step(1)
+    for i in range(5):
+        env.step(1)
     
