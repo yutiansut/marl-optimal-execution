@@ -278,6 +278,8 @@ class TradingAgent(FinancialAgent):
         self.sendMessage(
             self.exchangeID, Message({"msg": "QUERY_SPREAD", "sender": self.id, "symbol": symbol, "depth": depth})
         )
+        msg_copy = Message({"msg": "QUERY_SPREAD", "sender": self.id, "symbol": symbol, "depth": depth})
+        log_print("###{}###", msg_copy)
 
     # Used by any Trading Agent subclass to query the recent order stream for a symbol.
     def getOrderStream(self, symbol, length=1):

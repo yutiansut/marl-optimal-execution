@@ -2,9 +2,11 @@ import datetime
 
 import jsons as js
 import pandas as pd
+import numpy as np
 
 from agent.TradingAgent import TradingAgent
 from agent.execution.baselines.execution_agent import ExecutionAgent
+from ABIDESEnvMetrics import ABIDESEnvMetrics
 from util.util import log_print
 
 # DummyRLAgent needs to handle train and test modes
@@ -113,6 +115,10 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # execution_time_horizon attribute is for cancelorder schedule
         # this makes sure last cancelorder signal still within defined time range
         self.effective_time_horizon = execution_time_horizon[:-1]
+        self.metrics = ABIDESEnvMetrics(maxlen = 50, quantity = quantity)
+        # self.rem_quantity from ExecutionAgent
+        # self.accepted_orders = [] from ExecutionAgent
+
 
 
     def wakeup(self, currentTime):
@@ -174,6 +180,7 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # handle QUERY_SPREAD
         if self.rem_quantity > 0 and self.state == "AWAITING_SPREAD" and msg.body["msg"] == "QUERY_SPREAD":
             self.state = "AWAITING_WAKEUP"
+            self.metrics.addLOB(msg)
 
         # Note: cancel order and place order activities are moved into step process
         # 		"AWAITING_WAKEUP" state indicates agent has updated LOB info in this step
@@ -206,6 +213,7 @@ class DummyRLExecutionAgent(ExecutionAgent):
         """
         super().handleOrderExecution(currentTime, msg)
         # add more updates to agent's attributes per need
+        self.metrics.update_rem_quantity(self.rem_quantity)
 
 
     def get_observation(self, currentTime):
@@ -215,9 +223,14 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # TODO
         if not currentTime:
             currentTime = self.currentTime
-        print(f'dummyRL Agent observation get at {currentTime}')
-        return None
-
+        log_print(f'[---- {self.name} - {currentTime} ----]: observation calculated')
+        obs = []
+        obs.append(self.metrics.getLogReturn())
+        obs.append(self.metrics.getBidAskSpread())
+        obs.append(self.metrics.getVolImbalance())
+        obs.append(self.metrics.getSmartPrice())
+        obs.append(self.metrics.getMidPriceVolatility())
+        return np.array(obs)
 
 
 
