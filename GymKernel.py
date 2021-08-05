@@ -292,8 +292,8 @@ class GymKernel(Kernel):
                     self.msg.type,
                 )
 
-            if msg_recipient == 2:
-                break
+            # if msg_recipient == 2:
+            #     break
 
         if self.messages.empty() or (self.currentTime and (self.currentTime > self.stopTime)):
             self.terminateRunner()

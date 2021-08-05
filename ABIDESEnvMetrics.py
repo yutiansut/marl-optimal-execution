@@ -4,7 +4,7 @@ import numpy as np
 ### TODO: remaining quantity cannot be computed from the LOB
 
 class ABIDESEnvMetrics():
-    def __init__(self, maxlen=5, price_unit = "c") -> None:
+    def __init__(self, maxlen=5, price_unit = "c", quantity = 0) -> None:
         """
         example of msg: {'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500,
         'bids': [(8061, 300)], 'asks': [(8158, 300), (8164, 300)], 
@@ -14,7 +14,12 @@ class ABIDESEnvMetrics():
         self.price_unit = price_unit
         self.p0 = 0                 # initial price of the day
         self.maxlen = maxlen
+        self.quantity = quantity
+        self.rem_quantity = quantity
         self.__initialized = False
+
+    def update_rem_quantity(self, new_rem_quantity):
+        self.rem_quantity = new_rem_quantity
 
     def getBookCount(self):
         '''
@@ -31,6 +36,14 @@ class ABIDESEnvMetrics():
     def addLOB(self, msg):
         '''
         add content from msg to the self.data dictionary
+        example data stored:
+        {'msg': deque(['QUERY_SPREAD', 'QUERY_SPREAD'], maxlen=5),
+        'symbol': deque(['IBM', 'IBM'], maxlen=5), 'depth': deque([500, 500], maxlen=5),
+        'bids': deque([[(8061, 300)], [(8061, 300), (8059, 300)]], maxlen=5),
+        'asks': deque([[(8158, 300), (8164, 300), (8189, 300), (8204, 300), (8353, 9)], [(8158, 1000), (8164, 300), (8189, 300), (8204, 300), (8353, 9)]], maxlen=5),
+        'data': deque([8058, 8058], maxlen=5),
+        'mkt_closed': deque([False, False], maxlen=5),
+        'book': deque(['', ''], maxlen=5)}
         '''
         if self.__initialized == False:
             for key in msg:
@@ -69,7 +82,7 @@ class ABIDESEnvMetrics():
                 bidsVol = self.getContentByIndex("bids", idx=idx)[level-1][1]
                 asksVol = self.getContentByIndex("asks", idx=idx)[level-1][1]
             else:
-                return ValueError("mode is not valid, can only be total or single")
+                raise ValueError("mode is not valid, can only be total or single")
             return bidsVol, asksVol
 
     def getBidAskPrice(self, level=1, idx=0):
@@ -144,6 +157,7 @@ if __name__ == "__main__":
 
     for msg in [msg1, msg2]:
         a.addLOB(msg)
+    print("entire data stored", a.data)
     print("latest msg: ", a.getContentByIndex())
     print("Total number of LOB: ", a.getBookCount())
     print("Volume at level 1: ", a.getVol(level=1, mode = "single"))

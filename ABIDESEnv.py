@@ -36,7 +36,8 @@ class ABIDESEnv(gym.Env):
             done = 0
         else:
             done = 1
-            
+
+        # TODO: the first step returned obs as [] while the rest of steps return None instead
         return obs, reward, done, None
 
     def reset(self):
@@ -94,7 +95,6 @@ class ABIDESEnv(gym.Env):
 
 if __name__ == "__main__":
     print("start")
-    env = ABIDESEnv(ticker = "IBM", date = "2003-01-13", seed = 789)
-    for i in range(5):
-        env.step(1)
-    
+    env = ABIDESEnv(ticker = "IBM", date = "2003-01-14", seed = 789)
+    for i in range(8):
+        env.step(14)
