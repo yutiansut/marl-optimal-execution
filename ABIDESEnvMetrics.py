@@ -45,14 +45,16 @@ class ABIDESEnvMetrics():
         'mkt_closed': deque([False, False], maxlen=5),
         'book': deque(['', ''], maxlen=5)}
         '''
+        # msg body is assume to be dictionary at this point, if not, need assertion or try catch
+        msg_dict = msg.body
         if self.__initialized == False:
-            for key in msg:
+            for key in msg_dict:
                 self.data[key] = deque(maxlen=self.maxlen)
-                self.p0 = msg["data"]
+                self.p0 = msg_dict["data"]
             self.__initialized = True
         
-        for key in msg:
-            self.data[key].append(msg[key])
+        for key in msg_dict:
+            self.data[key].append(msg_dict[key])
     
     def getContentByIndex(self, name=None, idx = 0):
         '''

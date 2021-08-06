@@ -96,5 +96,6 @@ class ABIDESEnv(gym.Env):
 if __name__ == "__main__":
     print("start")
     env = ABIDESEnv(ticker = "IBM", date = "2003-01-14", seed = 789)
-    for i in range(8):
+    for i in range(12):
+        # during the first 7 steps, query spread may not be called, so there's no get_observation() method call
         env.step(14)

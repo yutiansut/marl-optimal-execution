@@ -116,6 +116,7 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # this makes sure last cancelorder signal still within defined time range
         self.effective_time_horizon = execution_time_horizon[:-1]
         self.metrics = ABIDESEnvMetrics(maxlen = 50, quantity = quantity)
+        self.rem_time = len(self.execution_time_horizon) - 1 # rem_time is in units of execution periods
         # self.rem_quantity from ExecutionAgent
         # self.accepted_orders = [] from ExecutionAgent
 
@@ -215,16 +216,25 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # add more updates to agent's attributes per need
         self.metrics.update_rem_quantity(self.rem_quantity)
 
+    def get_remaining_time(self, current_time):
+        curr_time = current_time.floor(self.freq)
+        for i, t in enumerate(list(self.execution_time_horizon)):
+            if t == curr_time:
+                current_ts_index = i
+                return len(self.execution_time_horizon) - 1 - current_ts_index
+        return len(self.execution_time_horizon)
 
     def get_observation(self, currentTime):
         """
         compute and return state related features
         """
-        # TODO
+        rem_time = self.get_remaining_time(currentTime)
+        self.rem_time = rem_time
         if not currentTime:
             currentTime = self.currentTime
         log_print(f'[---- {self.name} - {currentTime} ----]: observation calculated')
         obs = []
+        obs += [self.rem_time, self.rem_quantity]
         obs.append(self.metrics.getLogReturn())
         obs.append(self.metrics.getBidAskSpread())
         obs.append(self.metrics.getVolImbalance())

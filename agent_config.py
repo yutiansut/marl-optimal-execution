@@ -130,7 +130,7 @@ class Agents():
         self.num_agents += 1
 
     def addDummyRLExecutionAgent(self, direction = "BUY", quantity=1e5, freq="30S", starting_cash=0, 
-                                 start_time="09:30:00", end_time="16:00:00", log_events=False, log_orders=False):
+                                 start_time="09:40:00", end_time="16:00:00", log_events=False, log_orders=False):
         start_t = self.date_pd + pd.to_timedelta(start_time)
         end_t = self.date_pd + pd.to_timedelta(end_time)
         execution_time_horizon = pd.date_range(start=start_t, end=end_t, freq=freq)
