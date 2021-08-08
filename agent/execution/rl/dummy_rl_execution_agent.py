@@ -119,6 +119,7 @@ class DummyRLExecutionAgent(ExecutionAgent):
         self.rem_time = len(self.execution_time_horizon) - 1 # rem_time is in units of execution periods
         # self.rem_quantity from ExecutionAgent
         # self.accepted_orders = [] from ExecutionAgent
+        self.curr_executed_orders = []
 
 
 
@@ -157,6 +158,9 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # Call agent’s getCurrentSpread()* to receive LOB update
         self.getCurrentSpread(self.symbol, depth=500)
         self.state = "AWAITING_SPREAD"
+
+        # clean last period executed order memory
+        self.curr_executed_orders = []
 
 
     def setCancelOrder(self, requestedTime):
@@ -212,9 +216,14 @@ class DummyRLExecutionAgent(ExecutionAgent):
         """
 
         """
+        # in super's method, self.executed_orders attribute is used to record full history of executed orders
         super().handleOrderExecution(currentTime, msg)
+        # use self.cur_executed_orders to record current period executed orders
         # add more updates to agent's attributes per need
         self.metrics.update_rem_quantity(self.rem_quantity)
+
+        executed_order = msg.body["order"]
+        self.curr_executed_orders.append(executed_order)
 
     def get_remaining_time(self, current_time):
         curr_time = current_time.floor(self.freq)
@@ -248,10 +257,26 @@ class DummyRLExecutionAgent(ExecutionAgent):
         """
         compute reward for the action in current step
         """
-        # TODO
         if not currentTime:
             currentTime = self.currentTime
-        print(f'dummyRL Agent reward get at {currentTime}')
+        log_print(f'[---- {self.name} - {currentTime} ----]: reward calculated')
+        # reward signal for macro price trend
+        # need to get last two transacted price TODO
+        # rem_quantity
+        # current period total executed orders
+        curr_executed_quantity = sum(executed_order.quantity for executed_order in self.curr_executed_orders)
+
+        # reward signal for execution and placement strategy
+        # latest arrival price (mid price)
+        # fill price (weighted avg price of executed orders during current period) TODO
+        curr_total_cost = sum(executed_order.quantity * executed_order.fill_price for executed_order in self.curr_executed_orders)
+        try:
+            curr_weighted_fill_price = curr_total_cost / curr_executed_quantity
+        except ZeroDivisionError:
+            curr_weighted_fill_price = 0
+
+        # terminal reward comparing total cost with twap
+        # full history of transacted price TODO
         return None
 
 
