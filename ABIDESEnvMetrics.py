@@ -7,7 +7,7 @@ import numpy as np
 ### TODO: remaining quantity cannot be computed from the LOB
 
 class ABIDESEnvMetrics():
-    def __init__(self, maxlen=5, price_unit = "c", quantity = 0) -> None:
+    def __init__(self, maxlen=5, price_unit = "c", quantity = 0):
         """
         example of msg: {'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500,
         'bids': [(8061, 300)], 'asks': [(8158, 300), (8164, 300)], 
@@ -177,6 +177,16 @@ class ABIDESEnvMetrics():
             elif mid_point < last_mid_point:
                 d = -1
         return d
+
+    def getEffectiveSpread(self, level, idx):
+        '''
+        difference between the transaction price and the midpoint of the bid and ask quotes at the
+         time of the transaction
+        '''
+        mt = self.getMidPrice(level, idx)
+        dt = self.getTradeDirection(level, idx)
+        pt = self.getLastPrice()
+        return 2 * dt  * (pt - mt) / mt
 
 if __name__ == "__main__":
     from message.Message import Message
