@@ -1,4 +1,7 @@
 from collections import deque
+
+from numpy.core.arrayprint import DatetimeFormat
+from message.Message import Message
 import numpy as np
 
 ### TODO: remaining quantity cannot be computed from the LOB
@@ -54,12 +57,12 @@ class ABIDESEnvMetrics():
             self.__initialized = True
         
         for key in msg_dict:
-            self.data[key].append(msg_dict[key])
+            self.data[key].appendleft(msg_dict[key])
     
     def getContentByIndex(self, name=None, idx = 0):
         '''
         name [str]: name of the content to be extracted, if not specified, extract all content with the specified index
-        idx [int]: the index of the LOB, 0 is the most resent LOB
+        idx [int]: the index of the LOB, 0 is the most recent LOB
         '''
         if idx >= self.getBookCount():
             raise ValueError("LOB with index {} does not exist".format(idx))
@@ -120,6 +123,7 @@ class ABIDESEnvMetrics():
         idx [int]: the index of the LOB, 0 is the most resent LOB
         '''
         pt = self.getContentByIndex(name="data", idx = 0)
+
         return np.log(pt/self.p0)
 
     def getVolImbalance(self, level=1, idx=0):
@@ -149,15 +153,40 @@ class ABIDESEnvMetrics():
             MidPriceHist += [np.log(midPrice/self.p0)]
         return np.std(MidPriceHist)
 
+    def getLastPrice (self):
+        '''
+        Extract last traded price from message
+        '''
+        last_price = self.getContentByIndex(name = 'data', idx = 0)
+        return last_price
+
+    def getTradeDirection (self,level=1, idx = 0):
+        '''
+        Determine direction of trade based on Lee-Reedy Algorithm
+        '''
+        mid_point = self.getMidPrice(level=level, idx = idx)
+        last_price = self.getLastPrice()
+        if last_price > mid_point:
+            d = 1 # 1 indicates buy
+        elif last_price < mid_point:
+            d = -1 #sell
+        else:
+            last_mid_point = self.getMidPrice(level=level, idx = idx-1) #hardcoded; add wakeup_frequency
+            if mid_point > last_mid_point:
+                d = 1
+            elif mid_point < last_mid_point:
+                d = -1
+        return d
 
 if __name__ == "__main__":
+    from message.Message import Message
     a = ABIDESEnvMetrics(maxlen=5)
 
-    msg1 = {'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500, 'bids': [(8061, 300)], 'asks': [(8158, 300), (8164, 300), (8189, 300), (8204, 300), (8353, 9)], 'data': 8058, 'mkt_closed': False, 'book': ''}
-    msg2 = {'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500, 'bids': [(8061, 300), (8059, 300)], 'asks': [(8158, 1000), (8164, 300), (8189, 300), (8204, 300), (8353, 9)], 'data': 8058, 'mkt_closed': False, 'book': ''}
-    msg3 = {'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500, 'bids': [(8061, 500), (8059, 300)], 'asks': [(8158, 1000), (8164, 300), (8189, 300), (8204, 300), (8353, 9)], 'data': 8058, 'mkt_closed': False, 'book': ''}
+    msg1 = Message(body={'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500, 'bids': [(8061, 300)], 'asks': [(8158, 300), (8164, 300), (8189, 300), (8204, 300), (8353, 9)], 'data': 8058, 'mkt_closed': False, 'book': ''})
+    msg2 = Message(body={'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500, 'bids': [(8061, 300), (8059, 300)], 'asks': [(8200, 1000), (8164, 300), (8189, 300), (8204, 300), (8353, 9)], 'data': 8059, 'mkt_closed': False, 'book': ''})
+    msg3 = Message(body = {'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500, 'bids': [(8061, 500), (8059, 300)], 'asks': [(8158, 1000), (8164, 300), (8189, 300), (8204, 300), (8353, 9)], 'data': 100000, 'mkt_closed': False, 'book': ''})
 
-    for msg in [msg1, msg2]:
+    for msg in [msg1, msg2,msg3]:
         a.addLOB(msg)
     print("entire data stored", a.data)
     print("latest msg: ", a.getContentByIndex())
@@ -167,6 +196,8 @@ if __name__ == "__main__":
     print("Mid price: ", a.getMidPrice())
     print("Bid-ask spread: ", a.getBidAskSpread())
     print("Log return: ", a.getLogReturn())
-    print("Volumne Imbalance: ", a.getVolImbalance(level=2))
+    print("Volume Imbalance: ", a.getVolImbalance(level=2))
     print("smart price: ", a.getSmartPrice())
     print("mid price volatility: ", a.getMidPriceVolatility())
+    print ("last traded price: ", a.getLastPrice())
+    print ("Direction of trade is: ", a.getTradeDirection())
