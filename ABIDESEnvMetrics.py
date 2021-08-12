@@ -19,10 +19,36 @@ class ABIDESEnvMetrics():
         self.maxlen = maxlen
         self.quantity = quantity
         self.rem_quantity = quantity
+        self.curr_executed_orders = []
+        self.price_history = []
         self.__initialized = False
 
     def update_rem_quantity(self, new_rem_quantity):
         self.rem_quantity = new_rem_quantity
+
+    def update_curr_executed_orders(self, executed_order):
+        self.curr_executed_orders.append(executed_order)
+
+    def reset_curr_executed_orders(self):
+        self.curr_executed_orders = []
+
+    def get_curr_executed_orders(self):
+        """
+        returns a list of Order objects, each object has attributes: quantity, fill_price
+        """
+        return self.curr_executed_orders
+
+    def get_curr_executed_quantity(self):
+        """
+        returns current period total executed quantity
+        """
+        return sum(executed_order.quantity for executed_order in self.curr_executed_orders)
+
+    def get_curr_executed_cost(self):
+        """
+        returns the total cost of order executed during current period
+        """
+        return sum(executed_order.quantity * executed_order.fill_price for executed_order in self.curr_executed_orders)
 
     def getBookCount(self):
         '''
@@ -58,6 +84,9 @@ class ABIDESEnvMetrics():
         
         for key in msg_dict:
             self.data[key].appendleft(msg_dict[key])
+
+        # append last transacted price into price history, handle data is None case
+        self.price_history.append(msg_dict['data'])
     
     def getContentByIndex(self, name=None, idx = 0):
         '''
@@ -160,10 +189,19 @@ class ABIDESEnvMetrics():
         last_price = self.getContentByIndex(name = 'data', idx = 0)
         return last_price
 
+    def getLastNPrice(self, n=1):
+        """
+        Extracts last n transacted price from message
+        If n specified exceeds current book count, return the all historical transacted price available
+        """
+        effective_n = min(self.getBookCount(), n)
+        return [self.getContentByIndex(name = 'data', idx = i) for i in range(effective_n)]
+
     def getTradeDirection (self,level=1, idx = 0):
         '''
         Determine direction of trade based on Lee-Reedy Algorithm
         '''
+        # TODO: give d a default value to avoid potential bug
         mid_point = self.getMidPrice(level=level, idx = idx)
         last_price = self.getLastPrice()
         if last_price > mid_point:
@@ -188,6 +226,9 @@ class ABIDESEnvMetrics():
         pt = self.getLastPrice()
         return 2 * dt  * (pt - mt) / mt
 
+    def get_mean_historical_price(self):
+        return np.mean(self.price_history)
+
 if __name__ == "__main__":
     from message.Message import Message
     a = ABIDESEnvMetrics(maxlen=5)
@@ -209,5 +250,7 @@ if __name__ == "__main__":
     print("Volume Imbalance: ", a.getVolImbalance(level=2))
     print("smart price: ", a.getSmartPrice())
     print("mid price volatility: ", a.getMidPriceVolatility())
-    print ("last traded price: ", a.getLastPrice())
-    print ("Direction of trade is: ", a.getTradeDirection())
+    print("last traded price: ", a.getLastPrice())
+    print("last n transacted price:", a.getLastNPrice(n=2))
+    print("Direction of trade is: ", a.getTradeDirection())
+    print(a.price_history)

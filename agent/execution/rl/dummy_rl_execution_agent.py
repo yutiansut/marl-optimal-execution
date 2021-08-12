@@ -119,8 +119,6 @@ class DummyRLExecutionAgent(ExecutionAgent):
         self.rem_time = len(self.execution_time_horizon) - 1 # rem_time is in units of execution periods
         # self.rem_quantity from ExecutionAgent
         # self.accepted_orders = [] from ExecutionAgent
-        self.curr_executed_orders = []
-
 
 
     def wakeup(self, currentTime):
@@ -160,7 +158,7 @@ class DummyRLExecutionAgent(ExecutionAgent):
         self.state = "AWAITING_SPREAD"
 
         # clean last period executed order memory
-        self.curr_executed_orders = []
+        self.metrics.reset_curr_executed_orders()
 
 
     def setCancelOrder(self, requestedTime):
@@ -223,7 +221,7 @@ class DummyRLExecutionAgent(ExecutionAgent):
         self.metrics.update_rem_quantity(self.rem_quantity)
 
         executed_order = msg.body["order"]
-        self.curr_executed_orders.append(executed_order)
+        self.metrics.update_curr_executed_orders(executed_order)
 
     def get_remaining_time(self, current_time):
         curr_time = current_time.floor(self.freq)
@@ -261,22 +259,25 @@ class DummyRLExecutionAgent(ExecutionAgent):
             currentTime = self.currentTime
         log_print(f'[---- {self.name} - {currentTime} ----]: reward calculated')
         # reward signal for macro price trend
-        # need to get last two transacted price TODO
+        # need to get last two transacted price
+        last_two_transacted_prices = self.metrics.getLastNPrice(n=2)
         # rem_quantity
         # current period total executed orders
-        curr_executed_quantity = sum(executed_order.quantity for executed_order in self.curr_executed_orders)
+        curr_executed_quantity = self.metrics.get_curr_executed_quantity()
 
         # reward signal for execution and placement strategy
         # latest arrival price (mid price)
-        # fill price (weighted avg price of executed orders during current period) TODO
-        curr_total_cost = sum(executed_order.quantity * executed_order.fill_price for executed_order in self.curr_executed_orders)
+        # fill price (weighted avg price of executed orders during current period)
+        curr_total_cost = self.metrics.get_curr_executed_cost()
         try:
             curr_weighted_fill_price = curr_total_cost / curr_executed_quantity
         except ZeroDivisionError:
             curr_weighted_fill_price = 0
 
         # terminal reward comparing total cost with twap
-        # full history of transacted price TODO
+        # full history of transacted price
+        twap_mean_price = self.metrics.get_mean_historical_price()
+
         return None
 
 
