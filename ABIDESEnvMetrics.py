@@ -182,7 +182,7 @@ class ABIDESEnvMetrics():
             MidPriceHist += [np.log(midPrice/self.p0)]
         return np.std(MidPriceHist)
 
-    def getLastPrice (self):
+    def getLastPrice(self):
         '''
         Extract last traded price from message
         '''
@@ -197,7 +197,7 @@ class ABIDESEnvMetrics():
         effective_n = min(self.getBookCount(), n)
         return [self.getContentByIndex(name = 'data', idx = i) for i in range(effective_n)]
 
-    def getTradeDirection (self,level=1, idx = 0):
+    def getTradeDirection(self,level=1, idx = 0):
         '''
         Determine direction of trade based on Lee-Reedy Algorithm
         '''
@@ -229,8 +229,30 @@ class ABIDESEnvMetrics():
     def get_mean_historical_price(self):
         return np.mean(self.price_history)
 
+    def getPriceImprovement(self, idx, level=1):
+        '''
+        Calculate price improvement of a trade placed by RL agent 
+        '''
+        last_price_rl = self.curr_executed_orders[-1].fill_price
+        dt = self.getTradeDirection(level, idx)
+        nbb, nbo = self.getBidAskPrice(level, idx) #get NBB and NBO
+        if dt == 1:
+            price_improvement = nbo - last_price_rl #NBO-p if buy           
+        if dt == -1:
+            price_improvement = last_price_rl - nbb #p-nbb if sell
+        return price_improvement
+
+    def getSharesFulfilledPercent(self, idx, level):
+        quantity_executed = self.get_curr_executed_quantity()
+        #TODO: need quantity submitted by RL agent (quantity_submitted)
+        pass
+    
+    def getPerMinuteVolRate(self, idx, level):
+        #TODO: need volume traded in current period for the entire market
+        pass
 if __name__ == "__main__":
     from message.Message import Message
+    from util.order.Order import Order
     a = ABIDESEnvMetrics(maxlen=5)
 
     msg1 = Message(body={'msg': 'QUERY_SPREAD', 'symbol': 'IBM', 'depth': 500, 'bids': [(8061, 300)], 'asks': [(8158, 300), (8164, 300), (8189, 300), (8204, 300), (8353, 9)], 'data': 8058, 'mkt_closed': False, 'book': ''})
@@ -239,6 +261,13 @@ if __name__ == "__main__":
 
     for msg in [msg1, msg2,msg3]:
         a.addLOB(msg)
+
+    o = Order(agent_id = 'rbs', time_placed = '2021-08-12', symbol = 'IBM', quantity = 500, is_buy_order = True, order_id='123445')
+    o.fill_price = 8288
+    a.update_curr_executed_orders(o)
+    o1 = Order(agent_id = 'rbs', time_placed = '2021-08-12', symbol = 'IBM', quantity = 500, is_buy_order = False, order_id='123445')
+    o1.fill_price = 8188
+    a.update_curr_executed_orders(o1)
     print("entire data stored", a.data)
     print("latest msg: ", a.getContentByIndex())
     print("Total number of LOB: ", a.getBookCount())
@@ -254,3 +283,4 @@ if __name__ == "__main__":
     print("last n transacted price:", a.getLastNPrice(n=2))
     print("Direction of trade is: ", a.getTradeDirection())
     print(a.price_history)
+    print("Price Improvement: ", a.getPriceImprovement(idx=1))
