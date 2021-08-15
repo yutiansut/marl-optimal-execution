@@ -157,8 +157,8 @@ class DummyRLExecutionAgent(ExecutionAgent):
         self.getCurrentSpread(self.symbol, depth=500)
         self.state = "AWAITING_SPREAD"
 
-        # clean last period executed order memory
-        self.metrics.reset_curr_executed_orders()
+        # # clean last period executed order memory
+        # self.metrics.reset_curr_executed_orders()
 
 
     def setCancelOrder(self, requestedTime):
@@ -250,7 +250,6 @@ class DummyRLExecutionAgent(ExecutionAgent):
         return np.array(obs)
 
 
-
     def get_reward(self, currentTime):
         """
         compute reward for the action in current step
@@ -279,5 +278,8 @@ class DummyRLExecutionAgent(ExecutionAgent):
         twap_mean_price = self.metrics.get_mean_historical_price()
 
         return None
+
+    def clear_metrics_executed_order_buffer(self):
+        self.metrics.reset_curr_executed_orders()
 
 

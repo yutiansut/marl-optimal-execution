@@ -23,6 +23,9 @@ class ABIDESEnvMetrics():
         self.price_history = []
         self.__initialized = False
 
+        # required info:
+        # volume traded in current period in entire market
+
     def update_rem_quantity(self, new_rem_quantity):
         self.rem_quantity = new_rem_quantity
 
@@ -233,6 +236,7 @@ class ABIDESEnvMetrics():
         '''
         Calculate price improvement of a trade placed by RL agent 
         '''
+        # TODO: fix price_improvement may not be defined warning
         last_price_rl = self.curr_executed_orders[-1].fill_price
         dt = self.getTradeDirection(level, idx)
         nbb, nbo = self.getBidAskPrice(level, idx) #get NBB and NBO
@@ -282,5 +286,5 @@ if __name__ == "__main__":
     print("last traded price: ", a.getLastPrice())
     print("last n transacted price:", a.getLastNPrice(n=2))
     print("Direction of trade is: ", a.getTradeDirection())
-    print(a.price_history)
+    # print(a.price_history)
     print("Price Improvement: ", a.getPriceImprovement(idx=1))

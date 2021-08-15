@@ -21,10 +21,8 @@ class ABIDESEnv(gym.Env):
         '''
         action is from an external agent
         '''
-        # TODO: place order using action input
-
-
-        reward, obs = self.kernel.stepRunner()
+        # place order at the beginning of stepRunner() method
+        reward, obs = self.kernel.stepRunner(action)
 
         # # move following operation into kernel's stepRunner method, then return observation and reward
         # RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DummyRLExecutionAgent_name')]
@@ -68,23 +66,24 @@ class ABIDESEnv(gym.Env):
 
 
     def initKernel(self):
-        self.kernel = GymKernel("Market Replay Kernel", random_state=np.random.RandomState(seed=self.seed-1))
+        # by default, there should be only one dummy rl agent
+        RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT')[0]]
+        print(RL_agent)
+        # pass entire Agents object in order to enable kernel of more advanced operations
+        self.kernel = GymKernel("Market Replay Kernel",
+                                random_state=np.random.RandomState(seed=self.seed-1),
+                                RL_agent = RL_agent,
+                                agents=self.agents.agent_list,)
         kernelStartTime = pd.to_datetime(self.date)
-        kernelStopTime = pd.to_datetime(self.date) + pd.to_timedelta("16:10:00") 
-        #??????????????? time formulation is a bit messy, kernel time, agent time (TWAP specifically) need to ask
+        kernelStopTime = pd.to_datetime(self.date) + pd.to_timedelta("16:10:00")
         defaultComputationDelay = 0
         latency = np.zeros((self.agents.num_agents, self.agents.num_agents))
         noise = [1.0]
 
         print(self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT'))
 
-        # by default, there should be only one dummy rl agent
-        RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT')[0]]
-        print(RL_agent)
-        # pass entire Agents object in order to enable kernel of more advanced operations
-        self.kernel.initRunner(RL_agent = RL_agent,
-                               agents=self.agents.agent_list,
-                               startTime=kernelStartTime,
+
+        self.kernel.initRunner(startTime=kernelStartTime,
                                stopTime=kernelStopTime,
                                agentLatency=latency,
                                latencyNoise=noise,

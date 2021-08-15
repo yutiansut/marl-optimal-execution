@@ -15,11 +15,14 @@ class GymKernel(Kernel):
 
     # maybe decompose runner function into multiple helper functions for the use in step()
 
-
+    def __init__(self, kernel_name, RL_agent, agents=[], random_state=None):
+        super().__init__(kernel_name, random_state)
+        # agents passed in is Agents object, this change enables find agent by index method
+        # corresponding code related to self.agents have been changed
+        self.agents = agents
+        self.RL_agent = RL_agent
 
     def initRunner(self,
-                   RL_agent,
-                   agents=[],
                    startTime=None,
                    stopTime=None,
                    num_simulations=1,
@@ -32,10 +35,6 @@ class GymKernel(Kernel):
                    oracle=None,
                    log_dir=None,
                    ):
-        # agents passed in is Agents object, this change enables find agent by index method
-        # corresponding code related to self.agents have been changed
-        self.agents = agents
-        self.RL_agent = RL_agent
         self.agent_saved_states = [None] * len(self.agents)
 
         # placeholder for current step reward and observation
@@ -66,7 +65,7 @@ class GymKernel(Kernel):
 
         # This also nicely enforces agents being unable to act before
         # the simulation startTime.
-        self.agentCurrentTimes = [self.startTime] * len(agents)
+        self.agentCurrentTimes = [self.startTime] * len(self.agents)
 
         # agentComputationDelays is in nanoseconds, starts with a default
         # value from config, and can be changed by any agent at any time
@@ -74,7 +73,7 @@ class GymKernel(Kernel):
         # an agent each time it is awakened  (wakeup or recvMsg).  The
         # penalty applies _after_ the agent acts, before it may act again.
         # this might someday change to pd.Timedelta objects.
-        self.agentComputationDelays = [defaultComputationDelay] * len(agents)
+        self.agentComputationDelays = [defaultComputationDelay] * len(self.agents)
 
         # If an agentLatencyModel is defined, it will be used instead of
         # the older, non-model-based attributes.
@@ -87,7 +86,7 @@ class GymKernel(Kernel):
         # If agentLatency is not defined, define it using the defaultLatency.
         # This matrix defines the communication delay between every pair of
         # agents.
-        self.agentLatency = agentLatency if agentLatency is not None else [[defaultLatency]*len(agents)]*len(agents)
+        self.agentLatency = agentLatency if agentLatency is not None else [[defaultLatency]*len(self.agents)]*len(self.agents)
 
         # There is a noise model for latency, intended to be a one-sided
         # distribution with the peak at zero.  By default there is no noise
@@ -156,7 +155,7 @@ class GymKernel(Kernel):
         self.eventQueueWallClockStart = pd.Timestamp("now")
         self.ttl_messages = 0
 
-    def stepRunner(self):
+    def stepRunner(self, action):
         # Process messages until there aren't any (at which point there never can
         # be again, because agents only "wake" in response to messages), or until
         # the kernel stop time is reached.
@@ -164,7 +163,17 @@ class GymKernel(Kernel):
         # get dummyRL agent, currently only consider one dummyRL in one runner
         # later on, we can loop over the agents and finish operations to enable multiple dummyRL
         # RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DummyRLExecutionAgent_name')]
-        
+
+        # use action passed from ABIDESEnv to command RL_Agent place limit order
+        # self.RL_agent.placeLimitOrder(symbol = self.RL_agent.symbol,
+        #                               quantity = ,
+        #                               is_buy_order = ,
+        #                               limit_price = ,
+        #                               order_id=None,
+        #                               ignore_risk=True)
+
+        self.RL_agent.clear_metrics_executed_order_buffer()
+
         end_step = False
         while not end_step and not self.messages.empty() and self.currentTime and (self.currentTime <= self.stopTime):
             # Get the next message in timestamp order (delivery time) and extract it.
@@ -281,6 +290,7 @@ class GymKernel(Kernel):
                 # match msg_recipient id with dummy rl agent, and match msg title
                 if agent == self.RL_agent.id and msg.body["msg"] == "QUERY_SPREAD":
                     self.current_step_observation = self.RL_agent.get_observation(self.currentTime)
+                    self.RL_agent.clear_metrics_executed_order_buffer()
                     end_step = True
 
             else:
@@ -289,7 +299,7 @@ class GymKernel(Kernel):
                     "currentTime:",
                     self.currentTime,
                     "messageType:",
-                    self.msg.type,
+                    msg_type,
                 )
 
             # if msg_recipient == 2:
