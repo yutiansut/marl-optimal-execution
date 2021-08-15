@@ -215,7 +215,7 @@ class ABIDESEnvMetrics():
             last_mid_point = self.getMidPrice(level=level, idx = idx-1) #hardcoded; add wakeup_frequency
             if mid_point > last_mid_point:
                 d = 1
-            elif mid_point < last_mid_point:
+            else:
                 d = -1
         return d
 
@@ -242,7 +242,7 @@ class ABIDESEnvMetrics():
         nbb, nbo = self.getBidAskPrice(level, idx) #get NBB and NBO
         if dt == 1:
             price_improvement = nbo - last_price_rl #NBO-p if buy           
-        if dt == -1:
+        else:
             price_improvement = last_price_rl - nbb #p-nbb if sell
         return price_improvement
 
