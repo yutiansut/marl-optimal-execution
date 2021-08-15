@@ -254,6 +254,7 @@ class ABIDESEnvMetrics():
     def getPerMinuteVolRate(self, idx, level):
         #TODO: need volume traded in current period for the entire market
         pass
+
 if __name__ == "__main__":
     from message.Message import Message
     from util.order.Order import Order

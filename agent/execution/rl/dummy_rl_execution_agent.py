@@ -247,6 +247,11 @@ class DummyRLExecutionAgent(ExecutionAgent):
         obs.append(self.metrics.getVolImbalance())
         obs.append(self.metrics.getSmartPrice())
         obs.append(self.metrics.getMidPriceVolatility())
+        obs.append(self.metrics.getTradeDirection())
+        obs.append(self.metrics.getEffectiveSpread())
+        obs.append(self.metrics.getPriceImprovement())
+        # obs.append(self.metrics.getSharesFulfilledPercent())
+        # obs.append(self.metrics.getPerMinuteVolRate())
         return np.array(obs)
 
 

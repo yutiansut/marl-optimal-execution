@@ -165,9 +165,10 @@ class GymKernel(Kernel):
         # RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DummyRLExecutionAgent_name')]
 
         # use action passed from ABIDESEnv to command RL_Agent place limit order
+        # is_buy = True if self.RL_agent.direction == 'BUY' else False
         # self.RL_agent.placeLimitOrder(symbol = self.RL_agent.symbol,
         #                               quantity = ,
-        #                               is_buy_order = ,
+        #                               is_buy_order = is_buy,
         #                               limit_price = ,
         #                               order_id=None,
         #                               ignore_risk=True)
