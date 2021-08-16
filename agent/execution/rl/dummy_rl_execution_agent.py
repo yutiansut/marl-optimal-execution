@@ -91,7 +91,9 @@ class DummyRLExecutionAgent(ExecutionAgent):
         trade=True,
         log_events=False,
         log_orders=False,
-        random_state=None):
+        random_state=None,
+        order_level = 1,
+        a_q_map_steep_factor = 0.5):
         """
         add more memory placeholders for get_observation() method
         """
@@ -111,6 +113,11 @@ class DummyRLExecutionAgent(ExecutionAgent):
 
         # new attributes added for dummy rl agent
         self.freq = freq
+        # order_level is # of levels we want the agent to place order in.
+        # This will determine the policy output size of the RL agent
+        self.order_level = order_level
+        # a hyperparameter that tunes how steep we want the action-to-volume mapping to be 
+        self.a_q_map_steep_factor = a_q_map_steep_factor
         # effective_time_horizon is used for wakeup call schedule
         # execution_time_horizon attribute is for cancelorder schedule
         # this makes sure last cancelorder signal still within defined time range
@@ -120,6 +127,45 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # self.rem_quantity from ExecutionAgent
         # self.accepted_orders = [] from ExecutionAgent
 
+    def get_action_space_size(self):
+        '''
+        get the action size which matches the self.order_level 
+        e.g. when order_level = 1, the action has 2 values [total volume, level 1 %]
+        e.g. when order_level = 2, the action has 3 values [total volume, level 1 %, level 2 %]
+        '''
+        return self.order_level+1
+
+    def process_action(self, action):
+        '''
+        action: [total volume, level 1 info, level 2 info, level 3 info, ...]
+        return:
+        o: [level 1 vol, level 2 vol, level 3 vol, ...], order volumes
+        '''
+        action = np.array(action).flatten()
+        q0 = self.metrics.quantity              # total quantity
+        q = self.metrics.rem_quantity           # remaining quantity
+        x_hat = action[0]                       # total normalized volume to be placed
+        if sum(action[1:]) == 0.0:
+            o_hat = np.ones(len(action[1:]))/len(action[1:]) # equalize orders at all levels if outputs are all 0
+        else:
+            o_hat = action[1:]/sum(action[1:])  # normalized action in terms of %order to be placed at various levels
+        q_hat = q/q0                            # normalized remaining quantity
+
+        o_total = np.round(q0*q_hat*x_hat**(q_hat**self.a_q_map_steep_factor))   # total order volume
+        o = np.round(o_total*o_hat)                                              # individual orders
+        o[-1] = o_total - sum(o[0:-1])                                           # prevent errors from rounding; e.g. 3.5, 3.5 will round to 4,3
+        return o
+
+    def place_orders(self, action):
+        orders = self.process_action(action)
+        # use action passed from ABIDESEnv to command RL_Agent place limit order
+        # is_buy = True if self.RL_agent.direction == 'BUY' else False
+        # self.placeLimitOrder(symbol = self.RL_agent.symbol,
+        #                               quantity = ,
+        #                               is_buy_order = is_buy,
+        #                               limit_price = ,
+        #                               order_id=None,
+        #                               ignore_risk=True)
 
     def wakeup(self, currentTime):
         """
@@ -253,6 +299,13 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # obs.append(self.metrics.getSharesFulfilledPercent())
         # obs.append(self.metrics.getPerMinuteVolRate())
         return np.array(obs)
+
+    def get_observation_space_size(self):
+        '''
+        get the observation size, number is manually set to match the 
+        output size of the method `get_observation(self, currentTime)`
+        '''
+        return 10
 
 
     def get_reward(self, currentTime):

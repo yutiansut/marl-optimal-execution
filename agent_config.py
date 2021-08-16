@@ -146,7 +146,9 @@ class Agents():
                                       trade = True,
                                       log_events = log_events,
                                       log_orders = log_orders,
-                                      random_state = np.random.RandomState(seed=self.seed+self.num_agents)
+                                      random_state = np.random.RandomState(seed=self.seed+self.num_agents),
+                                      order_level = 2,
+                                      a_q_map_steep_factor = 0.5
                                       )
         self.agent_list.append(agent)
         self.num_agents += 1

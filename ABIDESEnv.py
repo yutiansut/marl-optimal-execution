@@ -17,6 +17,16 @@ class ABIDESEnv(gym.Env):
         self.seed = np.random.randint(low=0, high=2 ** 31 - 1) if seed == None else seed
         self.reset()
 
+        # specify input and output shape
+        RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT')[0]]
+        action_space = ( [0.0] * RL_agent.get_action_space_size(), [1.0] * RL_agent.get_action_space_size() )
+        observation_space = ( [0] * RL_agent.get_observation_space_size(), [0] * RL_agent.get_observation_space_size() )
+
+        self.action_space = gym.spaces.Box(np.array(action_space[0]), np.array(action_space[1]) )
+        self.observation_space = gym.spaces.Box(np.array(observation_space[0]), np.array(observation_space[1]) )
+
+
+
     def step(self, action):
         '''
         action is from an external agent
