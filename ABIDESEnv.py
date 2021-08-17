@@ -78,7 +78,7 @@ class ABIDESEnv(gym.Env):
     def initKernel(self):
         # by default, there should be only one dummy rl agent
         RL_agent = self.agents.agent_list[self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT')[0]]
-        print(RL_agent)
+        # print(RL_agent)
         # pass entire Agents object in order to enable kernel of more advanced operations
         self.kernel = GymKernel("Market Replay Kernel",
                                 random_state=np.random.RandomState(seed=self.seed-1),
@@ -90,7 +90,7 @@ class ABIDESEnv(gym.Env):
         latency = np.zeros((self.agents.num_agents, self.agents.num_agents))
         noise = [1.0]
 
-        print(self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT'))
+        # print(self.agents.getAgentIndexByName('DUMMY_RL_EXECUTION_AGENT'))
 
 
         self.kernel.initRunner(startTime=kernelStartTime,
@@ -105,6 +105,6 @@ class ABIDESEnv(gym.Env):
 if __name__ == "__main__":
     print("start")
     env = ABIDESEnv(ticker = "IBM", date = "2003-01-14", seed = 789)
-    for i in range(12):
-        # during the first 7 steps, query spread may not be called, so there's no get_observation() method call
-        env.step(14)
+    # for i in range(8):
+    #     # during the first 7 steps, query spread may not be called, so there's no get_observation() method call
+    #     env.step([0.02, 0.02])

@@ -397,39 +397,39 @@ class Kernel:
         if self.agentLatencyModel is not None:
             latency = self.agentLatencyModel.get_latency(sender_id=sender, recipient_id=recipient)
             deliverAt = sentTime + pd.Timedelta(latency)
-            log_print(
-                "Kernel applied latency {}, accumulated delay {}, one-time delay {} on sendMessage from: {} to {}, scheduled for {}",
-                latency,
-                self.currentAgentAdditionalDelay,
-                delay,
-                self.agents[sender].name,
-                self.agents[recipient].name,
-                self.fmtTime(deliverAt),
-            )
+            # log_print(
+            #     "Kernel applied latency {}, accumulated delay {}, one-time delay {} on sendMessage from: {} to {}, scheduled for {}",
+            #     latency,
+            #     self.currentAgentAdditionalDelay,
+            #     delay,
+            #     self.agents[sender].name,
+            #     self.agents[recipient].name,
+            #     self.fmtTime(deliverAt),
+            # )
         else:
             latency = self.agentLatency[sender][recipient]
             noise = self.random_state.choice(len(self.latencyNoise), 1, self.latencyNoise)[0]
             deliverAt = sentTime + pd.Timedelta(latency + noise)
-            log_print(
-                "Kernel applied latency {}, noise {}, accumulated delay {}, one-time delay {} on sendMessage from: {} to {}, scheduled for {}",
-                latency,
-                noise,
-                self.currentAgentAdditionalDelay,
-                delay,
-                self.agents[sender].name,
-                self.agents[recipient].name,
-                self.fmtTime(deliverAt),
-            )
+            # log_print(
+            #     "Kernel applied latency {}, noise {}, accumulated delay {}, one-time delay {} on sendMessage from: {} to {}, scheduled for {}",
+            #     latency,
+            #     noise,
+            #     self.currentAgentAdditionalDelay,
+            #     delay,
+            #     self.agents[sender].name,
+            #     self.agents[recipient].name,
+            #     self.fmtTime(deliverAt),
+            # )
 
         # Finally drop the message in the queue with priority == delivery time.
         self.messages.put((deliverAt, (recipient, MessageType.MESSAGE, msg)))
 
-        log_print(
-            "Sent time: {}, current time {}, computation delay {}",
-            sentTime,
-            self.currentTime,
-            self.agentComputationDelays[sender],
-        )
+        # log_print(
+        #     "Sent time: {}, current time {}, computation delay {}",
+        #     sentTime,
+        #     self.currentTime,
+        #     self.agentComputationDelays[sender],
+        # )
         log_print("Message queued: {}", msg)
 
     def setWakeup(self, sender=None, requestedTime=None):

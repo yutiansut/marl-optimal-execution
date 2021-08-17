@@ -54,19 +54,19 @@ class ABIDESEnvMetrics():
         return sum(executed_order.quantity * executed_order.fill_price for executed_order in self.curr_executed_orders)
 
     def getBookCount(self):
-        '''
+        """
         returns the number of LOB stored in the self.data dictionary
-        '''
+        """
         return len(self.data[self.getDataAttr()[0]])
 
     def getDataAttr(self):
-        '''
+        """
         returns the keys of the self.data dictionary
-        '''
+        """
         return list(self.data.keys())
     
     def addLOB(self, msg):
-        '''
+        """
         add content from msg to the self.data dictionary
         example data stored:
         {'msg': deque(['QUERY_SPREAD', 'QUERY_SPREAD'], maxlen=5),
@@ -76,7 +76,7 @@ class ABIDESEnvMetrics():
         'data': deque([8058, 8058], maxlen=5),
         'mkt_closed': deque([False, False], maxlen=5),
         'book': deque(['', ''], maxlen=5)}
-        '''
+        """
         # msg body is assume to be dictionary at this point, if not, need assertion or try catch
         msg_dict = msg.body
         if self.__initialized == False:
@@ -92,10 +92,10 @@ class ABIDESEnvMetrics():
         self.price_history.append(msg_dict['data'])
     
     def getContentByIndex(self, name=None, idx = 0):
-        '''
+        """
         name [str]: name of the content to be extracted, if not specified, extract all content with the specified index
         idx [int]: the index of the LOB, 0 is the most recent LOB
-        '''
+        """
         if idx >= self.getBookCount():
             raise ValueError("LOB with index {} does not exist".format(idx))
         elif name != None:
@@ -104,11 +104,11 @@ class ABIDESEnvMetrics():
             return {key:self.data[key][idx] for key in self.data}
     
     def getVol(self, level=1, idx = 0, mode = "total"):
-        '''
+        """
         level [int >= 1]: number of levels used to calculate the volumn
         idx [int]: the index of the LOB, 0 is the most resent LOB
         mode [str]: if total, all volume from levels <= specified will be summed, if single, only volume at the level will be returned
-        '''
+        """
         if idx >= self.getBookCount():
             raise ValueError("LOB with index {} does not exist".format(idx))
         else:
@@ -123,62 +123,63 @@ class ABIDESEnvMetrics():
             return bidsVol, asksVol
 
     def getBidAskPrice(self, level=1, idx=0):
-        '''
+        """
         level [int >= 1]: the level used to calculate the volume
         idx [int]: the index of the LOB, 0 is the most resent LOB
-        '''
+        """
         bids = self.getContentByIndex("bids", idx=idx)
         asks = self.getContentByIndex("asks", idx=idx)
         if len(bids) == 0 or len(asks) == 0:
             raise ValueError("Either bids or asks is empty")
         else:
+            # slicing [0] is extracting price at level-1
             return bids[level-1][0], asks[level-1][0]
 
     def getMidPrice(self, level=1, idx = 0):
-        '''
+        """
         level [int >= 1]: the level used to calculate the mid price
         idx [int]: the index of the LOB, 0 is the most resent LOB
-        '''
+        """
         bids, asks = self.getBidAskPrice(level=level, idx=idx)
         return (bids + asks)/2
 
     def getBidAskSpread(self, level=1, idx=0):
-        '''
+        """
         level [int >= 1]: the level used to calculate the bid-ask spread
         idx [int]: the index of the LOB, 0 is the most resent LOB
-        '''
+        """
         bids, asks = self.getBidAskPrice(level=level, idx=idx)
         return asks-bids
 
     def getLogReturn(self, idx = 0):
-        '''
+        """
         idx [int]: the index of the LOB, 0 is the most resent LOB
-        '''
+        """
         pt = self.getContentByIndex(name="data", idx = 0)
 
         return np.log(pt/self.p0)
 
     def getVolImbalance(self, level=1, idx=0):
-        '''
+        """
         level [int >= 1]: the level used to calculate the bid-ask volume imbalance
         idx [int]: the index of the LOB, 0 is the most resent LOB
-        '''
+        """
         bidsVol, asksVol = self.getVol(level=level, idx = idx, mode="total")
         return (bidsVol-asksVol)/(bidsVol+asksVol)
 
     def getSmartPrice(self, level=1, idx=0):
-        '''
+        """
         level [int >= 1]: the level used to calculate the smart price
         idx [int]: the index of the LOB, 0 is the most resent LOB
-        '''
+        """
         bidsPrice, asksPrice = self.getBidAskPrice(level=level, idx=idx)
         bidsVol, asksVol = self.getVol(level=level, idx = idx, mode="single")
         return np.tanh(asksPrice/asksVol - bidsPrice/bidsVol)
 
     def getMidPriceVolatility(self, level=1):
-        '''
+        """
         level [int >= 1]: the level used to calculate the smart price
-        '''
+        """
         MidPriceHist = []
         for idx in range(self.getBookCount()):
             midPrice = self.getMidPrice(level=level, idx = idx)
@@ -186,9 +187,9 @@ class ABIDESEnvMetrics():
         return np.std(MidPriceHist)
 
     def getLastPrice(self):
-        '''
+        """
         Extract last traded price from message
-        '''
+        """
         last_price = self.getContentByIndex(name = 'data', idx = 0)
         return last_price
 
@@ -201,9 +202,9 @@ class ABIDESEnvMetrics():
         return [self.getContentByIndex(name = 'data', idx = i) for i in range(effective_n)]
 
     def getTradeDirection(self,level=1, idx = 0):
-        '''
+        """
         Determine direction of trade based on Lee-Reedy Algorithm
-        '''
+        """
         # TODO: give d a default value to avoid potential bug
         mid_point = self.getMidPrice(level=level, idx = idx)
         last_price = self.getLastPrice()
@@ -220,10 +221,10 @@ class ABIDESEnvMetrics():
         return d
 
     def getEffectiveSpread(self, level, idx):
-        '''
+        """
         difference between the transaction price and the midpoint of the bid and ask quotes at the
          time of the transaction
-        '''
+        """
         mt = self.getMidPrice(level, idx)
         dt = self.getTradeDirection(level, idx)
         pt = self.getLastPrice()
@@ -233,10 +234,11 @@ class ABIDESEnvMetrics():
         return np.mean(self.price_history)
 
     def getPriceImprovement(self, idx, level=1):
-        '''
+        """
         Calculate price improvement of a trade placed by RL agent 
-        '''
+        """
         # TODO: fix price_improvement may not be defined warning
+        # TODO: handle the case when curr_executed_orders is empty
         last_price_rl = self.curr_executed_orders[-1].fill_price
         dt = self.getTradeDirection(level, idx)
         nbb, nbo = self.getBidAskPrice(level, idx) #get NBB and NBO

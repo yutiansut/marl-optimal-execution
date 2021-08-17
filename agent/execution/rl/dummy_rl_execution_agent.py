@@ -122,25 +122,25 @@ class DummyRLExecutionAgent(ExecutionAgent):
         # execution_time_horizon attribute is for cancelorder schedule
         # this makes sure last cancelorder signal still within defined time range
         self.effective_time_horizon = execution_time_horizon[:-1]
-        self.metrics = ABIDESEnvMetrics(maxlen = 50, quantity = quantity)
+        self.metrics = ABIDESEnvMetrics(maxlen = 100, quantity = quantity)
         self.rem_time = len(self.execution_time_horizon) - 1 # rem_time is in units of execution periods
         # self.rem_quantity from ExecutionAgent
         # self.accepted_orders = [] from ExecutionAgent
 
     def get_action_space_size(self):
-        '''
+        """
         get the action size which matches the self.order_level 
         e.g. when order_level = 1, the action has 2 values [total volume, level 1 %]
         e.g. when order_level = 2, the action has 3 values [total volume, level 1 %, level 2 %]
-        '''
+        """
         return self.order_level+1
 
     def process_action(self, action):
-        '''
+        """
         action: [total volume, level 1 info, level 2 info, level 3 info, ...]
         return:
         o: [level 1 vol, level 2 vol, level 3 vol, ...], order volumes
-        '''
+        """
         action = np.array(action).flatten()
         q0 = self.metrics.quantity              # total quantity
         q = self.metrics.rem_quantity           # remaining quantity
@@ -156,16 +156,30 @@ class DummyRLExecutionAgent(ExecutionAgent):
         o[-1] = o_total - sum(o[0:-1])                                           # prevent errors from rounding; e.g. 3.5, 3.5 will round to 4,3
         return o
 
-    def place_orders(self, action):
+    def place_orders(self, currentTime, action):
+        """
+        loop over action and place orders
+
+        action: [level 1 vol, level 2 vol, level 3 vol, ...], order volumes
+        """
         orders = self.process_action(action)
-        # use action passed from ABIDESEnv to command RL_Agent place limit order
-        # is_buy = True if self.RL_agent.direction == 'BUY' else False
-        # self.placeLimitOrder(symbol = self.RL_agent.symbol,
-        #                               quantity = ,
-        #                               is_buy_order = is_buy,
-        #                               limit_price = ,
-        #                               order_id=None,
-        #                               ignore_risk=True)
+        is_buy = True if self.direction == 'BUY' else False
+        for l, q in enumerate(orders):
+            try:
+                # get price for current level
+                bid, ask = self.metrics.getBidAskPrice(level = l+1, idx = 0)
+                price = bid if is_buy else ask
+                self.placeLimitOrder(symbol = self.symbol,
+                                     quantity = q,
+                                     is_buy_order = is_buy,
+                                     limit_price = price,
+                                     order_id=None,
+                                     ignore_risk=True)
+                log_print(f"[---- {self.name} - {currentTime} ----]: RL LIMIT ORDER PLACED - {q} @ {price}")
+            except:
+                # this situation happens when current LOB does not have sufficient level of bid or ask
+                log_print(f"[---- {self.name} - {currentTime} ----]: RL LIMIT ORDER FAILED - {q} @ level {l+1}")
+
 
     def wakeup(self, currentTime):
         """
@@ -189,14 +203,14 @@ class DummyRLExecutionAgent(ExecutionAgent):
                 # will be 0.5 ns earlier than next wakeup call
                 self.setCancelOrder([time for time in self.execution_time_horizon if time > currentTime][0])
             except IndexError:
-                log_print(f"[---- {self.name}  t={self.t} -- {currentTime} ----]: RL Agent CancelOrder complete")
+                log_print(f"[---- {self.name} -- {currentTime} ----]: RL Agent CancelOrder complete")
                 self.trade = False
         # Schedule next wakeup call if time permits using setWakeup implemented in Agent through kernel’s setWakeup()
         if self.trade:
             try:
                 self.setWakeup([time for time in self.effective_time_horizon if time > currentTime][0])
             except IndexError:
-                log_print(f"[---- {self.name}  t={self.t} -- {currentTime} ----]: RL Agent wakeups complete")
+                log_print(f"[---- {self.name} -- {currentTime} ----]: RL Agent wakeups complete")
                 self.trade = False
 
         # Call agent’s getCurrentSpread()* to receive LOB update
@@ -241,7 +255,7 @@ class DummyRLExecutionAgent(ExecutionAgent):
         if not currentTime:
             currentTime = self.currentTime
         for _, order in self.orders.items():
-            log_print(f"[---- {self.name} t={self.t} - {currentTime} ----]: CANCELLED QUANTITY : {order.quantity}")
+            log_print(f"[---- {self.name} - {currentTime} ----]: CANCELLED QUANTITY : {order.quantity}")
             if self.log_orders:
                 self.logEvent("CANCEL_SUBMITTED", js.dump(order, strip_privates=True))
             self.cancelOrder(order)
@@ -294,8 +308,8 @@ class DummyRLExecutionAgent(ExecutionAgent):
         obs.append(self.metrics.getSmartPrice())
         obs.append(self.metrics.getMidPriceVolatility())
         obs.append(self.metrics.getTradeDirection())
-        obs.append(self.metrics.getEffectiveSpread())
-        obs.append(self.metrics.getPriceImprovement())
+        obs.append(self.metrics.getEffectiveSpread(level = 1, idx = 0))
+        # obs.append(self.metrics.getPriceImprovement(idx = 0))
         # obs.append(self.metrics.getSharesFulfilledPercent())
         # obs.append(self.metrics.getPerMinuteVolRate())
         return np.array(obs)

@@ -166,8 +166,7 @@ class GymKernel(Kernel):
 
         # preprocess the action
         
-        self.RL_agent.place_orders(action)
-
+        self.RL_agent.place_orders(self.currentTime, action)
         self.RL_agent.clear_metrics_executed_order_buffer()
 
         end_step = False

@@ -502,7 +502,7 @@ class TradingAgent(FinancialAgent):
     def queryLastTrade(self, symbol, price):
         self.last_trade[symbol] = price
 
-        log_print("Received last trade price of {} for {}.", self.last_trade[symbol], symbol)
+        # log_print("Received last trade price of {} for {}.", self.last_trade[symbol], symbol)
 
         if self.mkt_closed:
             # Note this as the final price of the day.
@@ -528,7 +528,7 @@ class TradingAgent(FinancialAgent):
         else:
             best_ask, best_ask_qty = ("No asks", 0)
 
-        log_print("Received spread of {} @ {} / {} @ {} for {}", best_bid_qty, best_bid, best_ask_qty, best_ask, symbol)
+        # log_print("Received spread of {} @ {} / {} @ {} for {}", best_bid_qty, best_bid, best_ask_qty, best_ask, symbol)
 
         self.logEvent("BID_DEPTH", bids)
         self.logEvent("ASK_DEPTH", asks)
